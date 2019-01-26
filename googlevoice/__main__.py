@@ -1,14 +1,10 @@
-"""
-Googlevoice interactive application. Invoke with python -m googlevoice.
-"""
+""" Google Voice interactive CLI app. Invoke with `python -m googlevoice`. """
 
 from __future__ import print_function
 
-from sys import exit
-from atexit import register
+import atexit, sys
 from optparse import OptionParser
 from pprint import pprint
-
 from six.moves import input
 
 from googlevoice.voice import Voice
@@ -50,48 +46,73 @@ parser.add_option(
     help='Batch operations, asking for no interactive input')
 
 
-def login(**kwargs):
-    """
-    Login Voice instance based on options and interactivity
+YES   = ('', 'y')
+TRUTH = (True, 'true')
+
+def login(voice, **kwargs):
+    """ Login to a Voice instance, based on options, environment variable
+        values, and interactivity
     """
     import os
-    global voice
     
     def environ_override(name, viro=None, fallback=None):
+        """ Get a keyword argument, falling back to an environment
+            variable value, falling back finally to a provided
+            default value.
+        """
         if viro is None:
             viro = name
         return kwargs.get(name, None) or \
            os.environ.get(viro, None) or fallback
     
+    # Use the local “environ_override(…)” call to get keyword args:
     email  = environ_override('email',  'GOOGLE_VOICE_USER')
     passwd = environ_override('passwd', 'GOOGLE_VOICE_PASS')
-    batch  = environ_override('batch',  'GOOGLE_VOICE_BATCH', 'false') == 'true'
+    batch  = environ_override('batch',  'GOOGLE_VOICE_BATCH') in TRUTH
+    
+    print('Logging into voice…')
+    if email:
+        print('» EMAIL: %s' % email)
+    if passwd:
+        print('» PASSWD: *********')
+    if batch:
+        print('» BATCH: %s' % batch)
     
     try:
-        voice.login(email, passwd)
+        voice.login(email=email, passwd=passwd)
     except LoginError:
         if batch:
+            # Batch mode exits immediately on failure:
             print('Login failed.')
-            exit(0)
-        if input('Login failed. Retry? [Y/n] ').lower() in ('', 'y'):
-            login(None, None, batch)
+            return False
+        if input('Login failed. Retry? [Y/n] ').lower() in YES:
+            # Retrying forces an attempt with environment values:
+            return login(voice, email=None,
+                                passwd=None,
+                                batch=True)
         else:
-            exit(0)
+            return False
+    return True
 
 
-def logout():
-    global voice
-    print('Logging out of voice...')
+def logout(voice):
+    """ Callback delegate function to call `voice.logout()` at the
+        program’s end, using `atexit.register`.
+    """
+    print('Logging out of voice…')
     voice.logout()
 
 
-def pprint_folder(name):
+def pprint_folder(voice, name):
+    """ Use `pprint.pprint` to print out the contents of a folder. """
     folder = getattr(voice, name)()
     print(folder)
     pprint(folder.messages, indent=4)
 
 
 def main():
+    """ The main entry point for the “googlevoice” package CLI app. """
+    loggedin = False
     options, args = parser.parse_args()
 
     try:
@@ -101,25 +122,31 @@ def main():
 
     if action == 'help':
         print(parser.usage)
-        exit(0)
+        sys.exit(0)
 
+    # Initialize the application invocations’ Voice instance:
     voice = Voice()
-    login()
+    loggedin = login(voice)
+    
+    if loggedin:
+        atexit.register(logout, voice)
+    else:
+        print("» Couldn’t get login credentials, exiting…")
+        sys.exit(0)
 
-    register(logout)
-
+    # The interactive main loop:
     if action == 'interactive':
         while 1:
             try:
                 action = input('gvoice> ').lower().strip()
             except (EOFError, KeyboardInterrupt):
-                exit(0)
+                sys.exit(1)
             if not action:
                 continue
             elif action in ('q', 'quit', 'exit'):
                 break
             elif action in ('login', 'li'):
-                login()
+                loggedin = login(voice)
             elif action in ('logout', 'lo'):
                 voice.logout()
             elif action in ('call', 'c'):
@@ -148,34 +175,37 @@ def main():
             elif action in ('help', 'h', '?'):
                 print(parser.usage)
             elif action in ('trash', 't'):
-                pprint_folder('trash')
+                pprint_folder(voice, 'trash')
             elif action in ('spam', 'sp'):
-                pprint_folder('spam')
+                pprint_folder(voice, 'spam')
             elif action in ('inbox', 'i'):
-                pprint_folder('inbox')
+                pprint_folder(voice, 'inbox')
             elif action in ('voicemail', 'v'):
-                pprint_folder('voicemail')
+                pprint_folder(voice, 'voicemail')
             elif action in ('all', 'a'):
-                pprint_folder('all')
+                pprint_folder(voice, 'all')
             elif action in ('starred', 'st'):
-                pprint_folder('starred')
+                pprint_folder(voice, 'starred')
             elif action in ('missed', 'm'):
-                pprint_folder('missed')
+                pprint_folder(voice, 'missed')
             elif action in ('received', 're'):
-                pprint_folder('received')
+                pprint_folder(voice, 'received')
             elif action in ('recorded', 'r'):
-                pprint_folder('recorded')
+                pprint_folder(voice, 'recorded')
             elif action in ('sms', 'sm'):
-                pprint_folder('sms')
+                pprint_folder(voice, 'sms')
+    
+    # The “send_sms” action logic:
     else:
         if action == 'send_sms':
             try:
                 num, args = args[0], args[1:]
             except Exception:
                 print('Please provide a message')
-                exit(0)
+                sys.exit(4)
             args = (num, ' '.join(args))
         getattr(voice, action)(*args)
 
-
-__name__ == '__main__' and main()
+# Call the “main(…)” function:
+if __name__ == '__main__':
+    main()
