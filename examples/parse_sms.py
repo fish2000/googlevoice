@@ -1,12 +1,13 @@
+# encoding: utf-8
 #
 # SMS test via Google Voice
 #
 # John Nagle
 #   nagle@animats.com
 #
+from __future__ import print_function
 
 import bs4
-
 from googlevoice import Voice
 
 
@@ -17,23 +18,23 @@ def extractsms(htmlsms):
 
     Output is a list of dictionaries, one per message.
     """
-    msgitems = []										# accum message items here
+    msgitems = []                                       # accum message items here
     # Extract all conversations by searching for a DIV with an ID at top level.
-    tree = bs4.BeautifulSoup(htmlsms)			# parse HTML into tree
+    tree = bs4.BeautifulSoup(htmlsms)           # parse HTML into tree
     conversations = tree.findAll("div", attrs={"id": True}, recursive=False)
     for conversation in conversations:
         # For each conversation, extract each row, which is one SMS message.
         rows = conversation.findAll(attrs={"class": "gc-message-sms-row"})
-        for row in rows:								# for all rows
+        for row in rows:                                # for all rows
             # For each row, which is one message, extract all the fields.
             # tag this message with conversation ID
             msgitem = {"id": conversation["id"]}
             spans = row.findAll("span", attrs={"class": True}, recursive=False)
-            for span in spans:							# for all spans in row
+            for span in spans:                          # for all spans in row
                 cl = span["class"].replace('gc-message-sms-', '')
                 # put text in dict
                 msgitem[cl] = (" ".join(span.findAll(text=True))).strip()
-            msgitems.append(msgitem)					# add msg dictionary to list
+            msgitems.append(msgitem)                    # add msg dictionary to list
     return msgitems
 
 

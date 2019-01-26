@@ -1,15 +1,18 @@
+# encoding: utf-8
+from __future__ import print_function
+
 import os
-
 from six.moves import configparser
-
 from . import settings
 
 
 class Config(configparser.ConfigParser):
+    
+    """ A``ConfigParser`` subclass that looks into your home folder
+        for a file named ``.gvoice``, and parses configuration data
+        from it.
     """
-    ``ConfigParser`` subclass that looks into your home folder for a file named
-    ``.gvoice`` and parses configuration data from it.
-    """
+    
     def __init__(self, filename=os.path.expanduser('~/.gvoice')):
         self.fname = filename
 
@@ -37,6 +40,7 @@ class Config(configparser.ConfigParser):
     def set(self, option, value, section='gvoice'):
         return configparser.ConfigParser.set(self, section, option, value)
 
+    @property
     def phoneType(self):
         try:
             return int(self.get('phoneType'))
@@ -46,8 +50,8 @@ class Config(configparser.ConfigParser):
     def save(self):
         with open(self.fname, 'w') as f:
             self.write(f)
-
-    phoneType = property(phoneType)
+    
+    # Simple getter properties:
     forwardingNumber = property(lambda self: self.get('forwardingNumber'))
     email = property(lambda self: self.get('email', 'auth'))
     password = property(lambda self: self.get('password', 'auth'))

@@ -1,3 +1,4 @@
+# encoding: utf-8
 """ Google Voice interactive CLI app. Invoke with `python -m googlevoice`. """
 
 from __future__ import print_function

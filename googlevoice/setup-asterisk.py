@@ -1,11 +1,11 @@
 #!/usr/bin/env python
+# encoding: utf-8
 """
 Jacob Feisley, Ward Mundy, and Justin Quick
 """
-
 from __future__ import print_function
 
-from sys import exit
+import sys
 from getpass import getpass
 from six.moves import input
 
@@ -93,7 +93,7 @@ def main():
         fo.close()
     except IOError:
         print('Error opening file for writing: %s' % conf)
-        exit(0)
+        sys.exit(0)
 
     print("""
     Installation script is finished. Do NOT run it again on this system!
@@ -109,4 +109,5 @@ def main():
     """)
 
 
-__name__ == '__main__' and main()
+if __name__ == '__main__':
+    main()

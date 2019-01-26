@@ -1,3 +1,4 @@
+# encoding: utf-8
 DEFAULT_CONFIG = """
 [auth]
 # Google Account email address (one associated w/ your Voice account)

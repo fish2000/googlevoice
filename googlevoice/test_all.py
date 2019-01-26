@@ -1,32 +1,35 @@
+# encoding: utf-8
+from __future__ import print_function
+
+import itertools
 import os
 import sys
 import random
 import string
 import time
-import itertools
 
 from six.moves import input
 
-import responses
-import pytest
 import faker
+import pytest
+import responses
 
-from googlevoice import Voice
-from googlevoice import settings
 from googlevoice import conf
+from googlevoice import settings
+from googlevoice import Voice
 
 
 fake = faker.Faker()
 
-
 @pytest.fixture
 def random_gxf():
+    
     def random_alphanumeric():
         while True:
-            yield random.choice(string.ascii_letters + string.digits + '-')
-    token = '-'.join((
-        ''.join(itertools.islice(random_alphanumeric(), 34)),
-    ))
+            yield random.choice(string.ascii_letters +
+                                string.digits + '-')
+    
+    token = '-'.join((''.join(itertools.islice(random_alphanumeric(), 34)), ))
     timestamp = int(time.time() * 1000)
     return '{token}:{timestamp}'.format(**locals())
 
@@ -36,29 +39,27 @@ def config(tmpdir):
     return conf.Config(str(tmpdir / 'test-config.ini'))
 
 
-class TestVoice:
+class TestVoice(object):
+    
     @responses.activate
     def test_login(self, random_gxf):
-        responses.add(
-            responses.GET,
-            settings.LOGIN,
-            """
-            ...
-            <input type="hidden" name="gxf" value="{random_gxf}">
-            ...
-            """.format(**locals()),
-        )
-        responses.add(
-            responses.POST,
-            settings.LOGIN_POST,
-        )
-        responses.add(
-            responses.GET,
-            settings.INBOX,
-            "'_rnr_se': 'special-value'"
-        )
+        
+        responses.add(responses.GET,
+                      settings.LOGIN, """
+                      ...
+                      <input type="hidden" name="gxf" value="{random_gxf}">
+                      ...
+                      """.format(**locals()))
+        
+        responses.add(responses.POST,
+                      settings.LOGIN_POST)
+        
+        responses.add(responses.GET,
+                      settings.INBOX, "'_rnr_se': 'special-value'")
+        
         voice = Voice()
         voice.login(email=fake.email(), passwd=fake.password())
+        
         assert voice.special == 'special-value'
 
     @pytest.fixture(scope='class')
@@ -67,7 +68,6 @@ class TestVoice:
         output_captured = getattr(sys.stdout, 'name') != '<stdout>'
         if not has_creds and output_captured:
             pytest.skip("Cannot run with output captured")
-
         voice = Voice()
         voice.login()
         return voice
@@ -101,7 +101,8 @@ class TestVoice:
         assert voice.inbox
 
     def test_balance(self, voice):
-        assert voice.settings['credits']
+        # Let’s not assume we’re not broke:
+        assert voice.settings['credits'] > -1
 
     def test_search(self, voice):
         assert len(voice.search('joe'))
@@ -122,7 +123,8 @@ class TestVoice:
         voice.special is None
 
 
-class TestConfig:
+class TestConfig(object):
+    
     def test_defaults(self, config):
         assert config.forwardingNumber is None
         assert config.phoneType == 2
