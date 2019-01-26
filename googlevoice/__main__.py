@@ -65,7 +65,7 @@ def login(**kwargs):
     
     email  = environ_override('email',  'GOOGLE_VOICE_USER')
     passwd = environ_override('passwd', 'GOOGLE_VOICE_PASS')
-    batch  = environ_override('batch',  'GOOGLE_VOICE_BATCH', False)
+    batch  = environ_override('batch',  'GOOGLE_VOICE_BATCH', 'false') == 'true'
     
     try:
         voice.login(email, passwd)
