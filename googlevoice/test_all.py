@@ -18,7 +18,6 @@ from googlevoice import conf
 from googlevoice import settings
 from googlevoice import Voice
 
-
 fake = faker.Faker()
 
 @pytest.fixture
