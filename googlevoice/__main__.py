@@ -50,18 +50,30 @@ parser.add_option(
     help='Batch operations, asking for no interactive input')
 
 
-def login(email, passwd, batch):
+def login(**kwargs):
     """
     Login Voice instance based on options and interactivity
     """
+    import os
     global voice
+    
+    def environ_override(name, viro=None, fallback=None):
+        if viro is None:
+            viro = name
+        return kwargs.get(name, None) or \
+           os.environ.get(viro, None) or fallback
+    
+    email  = environ_override('email',  'GOOGLE_VOICE_USER')
+    passwd = environ_override('passwd', 'GOOGLE_VOICE_PASS')
+    batch  = environ_override('batch',  'GOOGLE_VOICE_BATCH', False)
+    
     try:
         voice.login(email, passwd)
     except LoginError:
         if batch:
             print('Login failed.')
             exit(0)
-        if input('Login failed. Retry?[Y/n] ').lower() in ('', 'y'):
+        if input('Login failed. Retry? [Y/n] ').lower() in ('', 'y'):
             login(None, None, batch)
         else:
             exit(0)
