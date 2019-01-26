@@ -2,6 +2,10 @@
 *.orig
 .DS_Store
 .tm_properties
+.pytest_cache/
+.hypothesis/
+__pycache__/
+
 *~
 \#*\#
 Icon*
@@ -12,8 +16,8 @@ Icon*
 *.jar
 a.out
 
-instakit.egg-info/
-django_instakit.egg-info/
+pygooglevoice.egg-info/
+googlevoice.egg-info/
 build/
 dist/
 sdist/
